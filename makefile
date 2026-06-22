@@ -1,33 +1,33 @@
-# Makefile для 8080 VM с SDL2
+CFLAGS = -m32 -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -Iinclude
+LDFLAGS = -m elf_i386 -T linker.ld
+ASFLAGS = -f elf32
 
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -I./src -I./src/gui -I./src/devices
-LDFLAGS = -lSDL2 -lSDL2_ttf -lm
+# Исходные файлы
+SRC = src/kernel.c src/video.c src/keyboard.c src/shell.c src/string.c src/reboot.c
+OBJ = $(SRC:.c=.o) boot.o
 
-SRC_DIR = src
-GUI_DIR = $(SRC_DIR)/gui
-DEV_DIR = $(SRC_DIR)/devices
+all: KwasOS.iso
 
-SRCS = $(SRC_DIR)/main.c \
-       $(SRC_DIR)/cpu.c \
-       $(SRC_DIR)/memory.c \
-       $(GUI_DIR)/window.c \
-       $(GUI_DIR)/terminal.c \
-       $(GUI_DIR)/debug.c \
-       $(DEV_DIR)/keyboard.c
+KwasOS.bin: $(OBJ)
+	ld $(LDFLAGS) -o $@ $^
 
-OBJS = $(SRCS:.c=.o)
-TARGET = 8080-vm
-
-all: $(TARGET)
-
-$(TARGET): $(OBJS)
-	$(CC) -o $@ $^ $(LDFLAGS)
+boot.o: boot/boot.asm
+	nasm $(ASFLAGS) $< -o $@
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	gcc $(CFLAGS) -c $< -o $@
+
+KwasOS.iso: KwasOS.bin grub.cfg
+	mkdir -p iso/boot/grub
+	cp KwasOS.bin iso/boot/
+	cp grub.cfg iso/boot/grub/
+	grub-mkrescue -o KwasOS.iso iso/
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJ) KwasOS.bin KwasOS.iso
+	rm -rf iso/
 
-.PHONY: all clean
+run: KwasOS.iso
+	qemu-system-x86_64 -cdrom KwasOS.iso -m 256
+
+.PHONY: all clean run
