@@ -1,3 +1,4 @@
+// src/video.c
 #include "video.h"
 
 static int cursor_row = 0;

@@ -1,3 +1,4 @@
+# Makefile
 CFLAGS = -m32 -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -Iinclude
 LDFLAGS = -m elf_i386 -T linker.ld
 ASFLAGS = -f elf32

@@ -1,4 +1,4 @@
-; boot.asm - мультизагрузочный заголовок и переход на C-код
+; boot/boot.asm - мультизагрузочный заголовок и переход на C-код
 section .multiboot
 align 4
     dd 0x1BADB002          ; магическое число Multiboot

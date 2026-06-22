@@ -1,3 +1,4 @@
+// src/kernel.c
 #include "video.h"
 #include "shell.h"
 

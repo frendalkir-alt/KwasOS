@@ -1,3 +1,4 @@
+// src/reboot.c
 #include "reboot.h"
 
 void reboot() {
