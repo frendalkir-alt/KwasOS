@@ -6,7 +6,7 @@ void kmain(unsigned int magic, unsigned int addr) {
     (void)magic; (void)addr;
 
     clear_screen();
-    print_string("KwasOS 0.1\n", COLOR_GREEN);
+    print_string("KwasOS 0.1.6-beta\n", COLOR_GREEN);
     print_string("Type 'help' for commands.\n", COLOR_CYAN);
 
     char buffer[256];
