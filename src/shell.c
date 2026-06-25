@@ -135,7 +135,7 @@ int process_command(char *cmd) {
     }
     else if (strcmp(cmd, "cls") == 0) {
         clear_screen();
-        print_string("KwasOS 0.1.6-beta\n", COLOR_GREEN);
+        print_string("KwasOS 0.1.6\n", COLOR_GREEN);
         return 1;   // экран очищен
     }
     else if (strcmp(cmd, "reboot") == 0) {
@@ -144,7 +144,7 @@ int process_command(char *cmd) {
         return 0;
     }
     else if (strcmp(cmd, "ver") == 0) {
-        print_string("KwasOS 0.1.6-beta\n", COLOR_GREEN);
+        print_string("KwasOS 0.1.6\n", COLOR_GREEN);
         return 0;
     }
     else if (strncmp(cmd, "echo ", 5) == 0) {
