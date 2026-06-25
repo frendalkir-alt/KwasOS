@@ -3,5 +3,6 @@
 #define REBOOT_H
 
 void reboot();
+void shutdown();
 
 #endif

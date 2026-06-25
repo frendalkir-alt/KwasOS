@@ -126,10 +126,11 @@ int process_command(char *cmd) {
     if (strcmp(cmd, "help") == 0) {
         print_string("Available commands:\n", COLOR_YELLOW);
         print_string("  help    - show this help\n", COLOR_WHITE);
-        print_string("  cls   - clear the screen\n", COLOR_WHITE);
-        print_string("  reboot  - reboot the system\n", COLOR_WHITE);
         print_string("  echo <text> - print text\n", COLOR_WHITE);
         print_string("  ver - show OS version\n", COLOR_WHITE);
+        print_string("  cls   - clear the screen\n", COLOR_WHITE);
+        print_string("  reboot  - reboot the system\n", COLOR_WHITE);
+        print_string("  shutdown  - Turn off the system\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
@@ -155,6 +156,11 @@ int process_command(char *cmd) {
     }
     else if (*cmd == '\0') {
         return 0;
+    }
+    else if (strcmp(cmd, "shutdown") == 0) {
+        print_string("Shutting down...\n", COLOR_WHITE);
+        shutdown();
+        return 1;
     }
     else {
         print_string("Unknown command: ", COLOR_RED);
