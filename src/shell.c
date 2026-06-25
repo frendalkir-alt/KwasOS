@@ -157,7 +157,7 @@ int process_command(char *cmd) {
     else if (*cmd == '\0') {
         return 0;
     }
-    else if (strcmp(cmd, "shutdown") == 0) {
+    if (strcmp(cmd, "shutdown") == 0) {
         print_string("Shutting down...\n", COLOR_WHITE);
         shutdown();
         return 1;

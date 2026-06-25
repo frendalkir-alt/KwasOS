@@ -1,4 +1,3 @@
-// include/reboot.h
 #ifndef REBOOT_H
 #define REBOOT_H
 
