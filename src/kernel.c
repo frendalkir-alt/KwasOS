@@ -10,7 +10,7 @@
 void kmain(void) {
     // Очищаем экран и выводим приветствие
     clear_screen();
-    print_string("KwasOS 0.1.6-beta (custom bootloader)\n", COLOR_GREEN);
+    print_string("KwasOS 0.1.6\n", COLOR_GREEN);
     print_string("Type 'help' for commands.\n", COLOR_CYAN);
 
     // Основной цикл командной оболочки
