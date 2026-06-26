@@ -1,0 +1,30 @@
+# Папка сборки
+build/
+KwasOS.iso
+boot.catalog
+floppy.img
+
+# Объектные файлы и бинарники
+*.o
+*.elf
+*.bin
+*.img
+*.iso
+*.catalog
+
+# Файлы, создаваемые редакторами и IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Логи и временные файлы
+*.log
+*.tmp
+
+# Файлы отладки
+*.dSYM/
