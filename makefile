@@ -1,42 +1,55 @@
-# makefile
-# Используем i686-elf-gcc для ядра, но загрузчик собирается отдельно
-CC = i686-elf-gcc
-CFLAGS = -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -Iinclude
-ASFLAGS = -f elf32
+# Компилятор для x86-64
+CC = x86_64-elf-gcc
+CFLAGS = -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -Iinclude -m64
+
+BUILD_DIR = build
+ISO_ROOT = $(BUILD_DIR)/iso_root
 
 SRC = src/kernel.c src/video.c src/keyboard.c src/shell.c src/string.c src/reboot.c
-OBJ = $(SRC:.c=.o)
+OBJ = $(addprefix $(BUILD_DIR)/, $(notdir $(SRC:.c=.o)))
 
-# Ядро как плоский бинарник (без ELF)
-KERNEL_ELF = kernel.elf
-KERNEL_BIN = kernel.bin
+KERNEL_ELF = $(BUILD_DIR)/kernel.elf
+KERNEL_BIN = $(BUILD_DIR)/kernel.bin
+BOOT_BIN = $(BUILD_DIR)/KwasBOOT.bin
+FLOPPY_IMG = $(BUILD_DIR)/floppy.img
+ISO_IMG = KwasOS.iso
 
-all: floppy.img
+all: $(ISO_IMG)
 
-# Компиляция ядра в ELF (для удобства отладки) и затем извлечение .text в raw binary
+$(BUILD_DIR):
+	mkdir -p $@
+
+$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
 $(KERNEL_ELF): $(OBJ)
 	$(CC) -nostdlib -ffreestanding -T linker.ld -o $@ $^
 
 $(KERNEL_BIN): $(KERNEL_ELF)
-	i686-elf-objcopy -O binary $< $@
+	x86_64-elf-objcopy -O binary $< $@
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Загрузчик (бинарник 512 байт)
-KwasBOOT.bin: KwasBOOT/boot.asm
+$(BOOT_BIN): KwasBOOT/boot.asm | $(BUILD_DIR)
 	nasm -f bin $< -o $@
 
-# Образ дискеты 1.44 МБ с загрузчиком и ядром
-floppy.img: KwasBOOT.bin $(KERNEL_BIN)
-	dd if=/dev/zero of=floppy.img bs=1024 count=1440
-	dd if=KwasBOOT.bin of=floppy.img bs=512 count=1 conv=notrunc
-	dd if=$(KERNEL_BIN) of=floppy.img bs=512 seek=1 conv=notrunc
+$(FLOPPY_IMG): $(BOOT_BIN) $(KERNEL_BIN)
+	dd if=/dev/zero of=$@ bs=1024 count=1440 2>/dev/null
+	dd if=$(BOOT_BIN) of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
+	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=1 conv=notrunc 2>/dev/null
+
+$(ISO_IMG): $(FLOPPY_IMG)
+	mkdir -p $(ISO_ROOT)
+	cp $(FLOPPY_IMG) $(ISO_ROOT)/floppy.img
+	xorriso -as mkisofs -b floppy.img -c boot.catalog -o $@ $(ISO_ROOT)
+	rm -rf $(ISO_ROOT)
+
+run: $(ISO_IMG)
+	qemu-system-x86_64 -cdrom $(ISO_IMG) -m 256 -cpu qemu64
+
+floppy: $(FLOPPY_IMG)
+run-floppy: $(FLOPPY_IMG)
+	qemu-system-x86_64 -fda $(FLOPPY_IMG) -m 256 -cpu qemu64
 
 clean:
-	rm -f $(OBJ) $(KERNEL_ELF) $(KERNEL_BIN) KwasBOOT.bin floppy.img
+	rm -rf $(BUILD_DIR) $(ISO_IMG)
 
-run: floppy.img
-	qemu-system-x86_64 -fda floppy.img -m 256
-
-.PHONY: all clean run
+.PHONY: all clean run run-floppy floppy

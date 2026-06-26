@@ -1,4 +1,3 @@
-// src/reboot.c
 #include "reboot.h"
 
 void reboot() {
@@ -13,20 +12,18 @@ void reboot() {
 
 void shutdown() {
     __asm__ volatile ("cli");
-    // Попытка выключения через порт 0x604 (QEMU, VirtualBox)
+    // Для QEMU:
     __asm__ volatile (
         "movw $0x604, %%dx\n"
         "movw $0x2000, %%ax\n"
         "outw %%ax, %%dx"
         : : : "%dx", "%ax"
     );
-    // Запасной вариант – порт 0x4004
     __asm__ volatile (
         "movw $0x4004, %%dx\n"
         "movw $0x2000, %%ax\n"
         "outw %%ax, %%dx"
         : : : "%dx", "%ax"
     );
-    // Если ничего не вышло, уходим в бесконечный HLT
     while (1) __asm__ volatile ("hlt");
 }
