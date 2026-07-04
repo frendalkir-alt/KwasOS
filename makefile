@@ -1,5 +1,3 @@
-# makefile
-
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)
@@ -54,8 +52,16 @@ CFLAGS += -Ikernel/include -Idrivers/include
 BUILD_DIR = build
 ISO_ROOT = $(BUILD_DIR)/iso_root
 
+# Ищем все .c файлы
 SRC := $(shell find kernel drivers -name '*.c')
 OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
+
+# Ищем все .asm файлы, кроме boot.asm (он в boot/x86_64/)
+ASM_SRC := $(shell find kernel drivers -name '*.asm' 2>/dev/null)
+ASM_OBJ := $(patsubst %.asm,$(BUILD_DIR)/%.o,$(ASM_SRC))
+
+# Добавляем ассемблерные объекты
+OBJ += $(ASM_OBJ)
 
 KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
@@ -68,24 +74,35 @@ all: $(ISO_IMG)
 $(BUILD_DIR):
 	mkdir -p $@
 
+# Компиляция C
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Компиляция ASM (ELF64)
+$(BUILD_DIR)/%.o: %.asm | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
+	$(NASM) -f elf64 $< -o $@
+
+# Линковка ядра
 $(KERNEL_ELF): $(OBJ)
 	$(CC) -nostdlib -ffreestanding -T linker.ld -o $@ $^
 
+# Преобразование ELF в бинарник
 $(KERNEL_BIN): $(KERNEL_ELF)
 	$(OBJCOPY) -O binary $< $@
 
+# Сборка загрузчика (boot.asm)
 $(BOOT_BIN): boot/x86_64/boot.asm | $(BUILD_DIR)
 	$(NASM) -f bin $< -o $@
 
+# Создание floppy-образа
 $(FLOPPY_IMG): $(BOOT_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero of=$@ bs=1024 count=1440 2>/dev/null
 	dd if=$(BOOT_BIN) of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
 	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=1 conv=notrunc 2>/dev/null
 
+# Создание ISO-образа
 $(ISO_IMG): $(FLOPPY_IMG)
 	mkdir -p $(ISO_ROOT)
 	cp $(FLOPPY_IMG) $(ISO_ROOT)/floppy.img

@@ -92,5 +92,30 @@ void delete_char() {
     }
 }
 
+void print_int(int num, unsigned char color) {
+    char buf[32];
+    int i = 0;
+    int is_negative = 0;
+
+    if (num == 0) {
+        print_char('0', color);
+        return;
+    }
+    if (num < 0) {
+        is_negative = 1;
+        num = -num;
+    }
+    while (num > 0) {
+        buf[i++] = '0' + (num % 10);
+        num /= 10;
+    }
+    if (is_negative) {
+        buf[i++] = '-';
+    }
+    while (i > 0) {
+        print_char(buf[--i], color);
+    }
+}
+
 int get_cursor_row() { return cursor_row; }
 int get_cursor_col() { return cursor_col; }

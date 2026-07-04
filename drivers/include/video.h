@@ -22,6 +22,7 @@ void scroll_up();
 void print_char(char c, unsigned char color);
 void print_string(const char *str, unsigned char color);
 void delete_char();
+void print_int(int num, unsigned char color);
 int get_cursor_row();
 int get_cursor_col();
 
