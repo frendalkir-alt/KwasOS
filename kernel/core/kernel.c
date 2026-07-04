@@ -1,4 +1,5 @@
-// src/kernel.c
+// kernel/core/kernel.c
+
 #include "video.h"
 #include "shell.h"
 
@@ -10,7 +11,7 @@
 void kmain(void) {
     // Очищаем экран и выводим приветствие
     clear_screen();
-    print_string("KwasOS 0.1.6\n", COLOR_GREEN);
+    print_string("KwasOS 0.1.7\n", COLOR_GREEN);
     print_string("Type 'help' for commands.\n", COLOR_CYAN);
 
     // Основной цикл командной оболочки

@@ -1,3 +1,5 @@
+# makefile
+
 # Определение ОС
 UNAME_S := $(shell uname -s)
 
@@ -11,7 +13,6 @@ ifeq ($(UNAME_S),Linux)
 endif
 
 ifeq ($(UNAME_S),Darwin)
-    # macOS
     X8664_ELF_GCC := $(shell command -v x86_64-elf-gcc 2>/dev/null)
     ifeq ($(strip $(X8664_ELF_GCC)),)
         $(error "x86_64-elf-gcc not found. Please install it: brew install x86_64-elf-gcc")
@@ -23,7 +24,6 @@ ifeq ($(UNAME_S),Darwin)
     NASM = nasm
 endif
 
-# Windows (MSYS, MINGW, Cygwin)
 ifneq (,$(findstring MINGW,$(UNAME_S)))
     CC = x86_64-elf-gcc
     OBJCOPY = x86_64-elf-objcopy
@@ -46,20 +46,22 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
     NASM = nasm
 endif
 
-# Если переменные не определены, выдать ошибку
 ifeq ($(CC),)
     $(error "Unsupported OS: $(UNAME_S). Please install required tools manually.")
 endif
 
 # Флаги компиляции
-CFLAGS = -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -Iinclude -m64
+CFLAGS = -nostdlib -nostdinc -ffreestanding -std=c99 -Wall -Wextra -m64
+# Добавляем все папки с заголовками
+CFLAGS += -Ikernel/include -Idrivers/include
 
-# Папки и цели
 BUILD_DIR = build
 ISO_ROOT = $(BUILD_DIR)/iso_root
 
-SRC = src/kernel.c src/video.c src/keyboard.c src/shell.c src/string.c src/reboot.c
-OBJ = $(addprefix $(BUILD_DIR)/, $(notdir $(SRC:.c=.o)))
+# Находим все .c файлы в поддиректориях kernel/ и drivers/
+SRC := $(shell find kernel drivers -name '*.c')
+# Генерируем имена объектных файлов, сохраняя структуру каталогов
+OBJ := $(patsubst %.c,$(BUILD_DIR)/%.o,$(SRC))
 
 KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
@@ -69,36 +71,46 @@ ISO_IMG = KwasOS.iso
 
 all: $(ISO_IMG)
 
+# Создаём директории для объектных файлов
 $(BUILD_DIR):
 	mkdir -p $@
 
-$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR)
+# Правило для компиляции любого .c файла
+$(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Линковка ядра
 $(KERNEL_ELF): $(OBJ)
 	$(CC) -nostdlib -ffreestanding -T linker.ld -o $@ $^
 
+# Преобразование ELF → бинарник
 $(KERNEL_BIN): $(KERNEL_ELF)
 	$(OBJCOPY) -O binary $< $@
 
-$(BOOT_BIN): KwasBOOT/boot.asm | $(BUILD_DIR)
+# Сборка загрузчика
+$(BOOT_BIN): boot/x86_64/boot.asm | $(BUILD_DIR)
 	$(NASM) -f bin $< -o $@
 
+# Создание floppy-образа
 $(FLOPPY_IMG): $(BOOT_BIN) $(KERNEL_BIN)
 	dd if=/dev/zero of=$@ bs=1024 count=1440 2>/dev/null
 	dd if=$(BOOT_BIN) of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
 	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=1 conv=notrunc 2>/dev/null
 
+# Создание ISO
 $(ISO_IMG): $(FLOPPY_IMG)
 	mkdir -p $(ISO_ROOT)
 	cp $(FLOPPY_IMG) $(ISO_ROOT)/floppy.img
 	$(XORRISO) -as mkisofs -b floppy.img -c boot.catalog -o $@ $(ISO_ROOT)
 	rm -rf $(ISO_ROOT)
 
+# Запуск в QEMU
 run: $(ISO_IMG)
 	$(QEMU) -cdrom $(ISO_IMG) -m 256 -cpu qemu64
 
 floppy: $(FLOPPY_IMG)
+
 run-floppy: $(FLOPPY_IMG)
 	$(QEMU) -fda $(FLOPPY_IMG) -m 256 -cpu qemu64
 

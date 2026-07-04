@@ -1,4 +1,5 @@
-// include/rebbot.h
+// kernel/include/rebbot.h
+
 #ifndef REBOOT_H
 #define REBOOT_H
 

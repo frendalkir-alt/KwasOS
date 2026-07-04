@@ -1,4 +1,5 @@
-// include/shell.h
+// drivers/include/shell.h
+
 #ifndef SHELL_H
 #define SHELL_H
 

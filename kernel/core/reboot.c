@@ -1,3 +1,5 @@
+// kernel/core/reboot.c
+
 #include "reboot.h"
 
 void reboot() {

@@ -1,4 +1,5 @@
-; KwasBOOT64 - загрузчик для KwasOS (64-bit)
+; boot/x64_86/boot.asm - 64'х битный загрузчик
+
 BITS 16
 ORG 0x7C00
 

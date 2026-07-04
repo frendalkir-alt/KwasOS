@@ -1,3 +1,5 @@
+// kernel/include/stdint.h
+
 #ifndef STDINT_H
 #define STDINT_H
 
