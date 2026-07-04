@@ -27,7 +27,6 @@ int get_key() {
         if (!(status & 0x01)) continue;
         __asm__ volatile ("inb $0x60, %0" : "=a"(scancode));
 
-        // Обработка Shift
         if (scancode == 0x2A || scancode == 0x36) {
             shift_pressed = 1;
             continue;
@@ -37,15 +36,13 @@ int get_key() {
             continue;
         }
 
-        // Обработка расширенных клавиш (0xE0)
         if (scancode == 0xE0) {
             unsigned char scancode2;
             do {
                 __asm__ volatile ("inb $0x64, %0" : "=a"(status));
             } while (!(status & 0x01));
             __asm__ volatile ("inb $0x60, %0" : "=a"(scancode2));
-            if (scancode2 & 0x80) continue;  // отпускание
-            // Возвращаем специальные коды
+            if (scancode2 & 0x80) continue;
             if (scancode2 == 0x48) return KEY_UP;
             if (scancode2 == 0x50) return KEY_DOWN;
             if (scancode2 == 0x4B) return KEY_LEFT;
@@ -53,14 +50,11 @@ int get_key() {
             continue;
         }
 
-        // Отпускания обычных клавиш пропускаем
         if (scancode & 0x80) continue;
 
-        // Enter и Backspace
         if (scancode == 0x1C) return '\n';
         if (scancode == 0x0E) return 0x08;
 
-        // Печатные символы
         if (scancode < sizeof(scancode_to_ascii)) {
             char ascii = shift_pressed ? scancode_to_shift[scancode] : scancode_to_ascii[scancode];
             if (ascii != 0) return (int)(unsigned char)ascii;

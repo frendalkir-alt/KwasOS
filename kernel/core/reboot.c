@@ -14,7 +14,6 @@ void reboot() {
 
 void shutdown() {
     __asm__ volatile ("cli");
-    // Для QEMU:
     __asm__ volatile (
         "movw $0x604, %%dx\n"
         "movw $0x2000, %%ax\n"

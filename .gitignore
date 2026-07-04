@@ -1,10 +1,8 @@
-# Папка сборки
 build/
 KwasOS.iso
 boot.catalog
 floppy.img
 
-# Объектные файлы и бинарники
 *.o
 *.elf
 *.bin
@@ -12,7 +10,6 @@ floppy.img
 *.iso
 *.catalog
 
-# Файлы, создаваемые редакторами и IDE
 .vscode/
 .idea/
 *.swp
@@ -22,9 +19,7 @@ floppy.img
 Thumbs.db
 desktop.ini
 
-# Логи и временные файлы
 *.log
 *.tmp
 
-# Файлы отладки
 *.dSYM/
