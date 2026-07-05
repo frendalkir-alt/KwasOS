@@ -20,38 +20,40 @@ void readline(char *buffer, int max_len) {
     int pos = 0;
     buffer[0] = '\0';
     history_pos = history_count;
-
+    
     int start_row = get_cursor_row();
-
+    
     while (1) {
         int key = get_key();
-
-        if (key == '\n') {
+        
+        if (key == '\n' || key == 0x0D) {
             buffer[pos] = '\0';
             print_char('\n', COLOR_WHITE);
+            
             if (pos > 0) {
-                if (history_count == 0 || strcmp(buffer, history[history_count-1]) != 0) {
+                if (history_count == 0 || strcmp(buffer, history[history_count - 1]) != 0) {
                     if (history_count < HISTORY_SIZE) {
                         int i;
-                        for (i = 0; i <= pos && i < MAX_CMD_LEN-1; i++)
+                        for (i = 0; i <= pos && i < MAX_CMD_LEN - 1; i++)
                             history[history_count][i] = buffer[i];
                         history[history_count][pos] = '\0';
                         history_count++;
                     } else {
-                        for (int i = 0; i < HISTORY_SIZE-1; i++) {
+                        for (int i = 0; i < HISTORY_SIZE - 1; i++) {
                             for (int j = 0; j < MAX_CMD_LEN; j++)
-                                history[i][j] = history[i+1][j];
+                                history[i][j] = history[i + 1][j];
                         }
-                        for (int i = 0; i <= pos && i < MAX_CMD_LEN-1; i++)
-                            history[HISTORY_SIZE-1][i] = buffer[i];
-                        history[HISTORY_SIZE-1][pos] = '\0';
+                        for (int i = 0; i <= pos && i < MAX_CMD_LEN - 1; i++)
+                            history[HISTORY_SIZE - 1][i] = buffer[i];
+                        history[HISTORY_SIZE - 1][pos] = '\0';
                     }
                 }
             }
+            
             history_pos = history_count;
             return;
         }
-        else if (key == 0x08) {
+        else if (key == 0x08 || key == '\b') {
             if (pos > 0) {
                 pos--;
                 delete_char();
@@ -66,9 +68,10 @@ void readline(char *buffer, int max_len) {
                     print_char(' ', COLOR_WHITE);
                 }
                 gotoxy(start_row, INPUT_START_COL);
+                
                 const char *hist_str = history[history_pos];
                 int i = 0;
-                while (hist_str[i] && i < max_len-1) {
+                while (hist_str[i] && i < max_len - 1) {
                     buffer[i] = hist_str[i];
                     print_char(hist_str[i], COLOR_WHITE);
                     i++;
@@ -85,13 +88,14 @@ void readline(char *buffer, int max_len) {
                     print_char(' ', COLOR_WHITE);
                 }
                 gotoxy(start_row, INPUT_START_COL);
+                
                 if (history_pos == history_count) {
                     pos = 0;
                     buffer[0] = '\0';
                 } else {
                     const char *hist_str = history[history_pos];
                     int i = 0;
-                    while (hist_str[i] && i < max_len-1) {
+                    while (hist_str[i] && i < max_len - 1) {
                         buffer[i] = hist_str[i];
                         print_char(hist_str[i], COLOR_WHITE);
                         i++;
