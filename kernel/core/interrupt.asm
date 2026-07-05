@@ -1,4 +1,4 @@
-; interrupt.asm – обработчики прерываний (x86-64, NASM)
+; kernel/core/interrupt.asm – обработчики прерываний (x86-64, NASM)
 
 extern isr_handler
 
@@ -36,7 +36,7 @@ isr_common:
     push r14
     push r15
 
-    mov rdi, rsp        ; передаём указатель на стек (registers_t*)
+    mov rdi, rsp
     call isr_handler
 
     pop r15
@@ -55,11 +55,10 @@ isr_common:
     pop rbx
     pop rax
 
-    add rsp, 16         ; убираем int_no и err_code
+    add rsp, 16
     sti
     iretq
 
-; Исключения 0–31
 isr_no_error 0
 isr_no_error 1
 isr_no_error 2
@@ -93,7 +92,6 @@ isr_error   29
 isr_error   30
 isr_no_error 31
 
-; IRQ 32–47 (все без ошибки)
 %assign i 32
 %rep 16
     isr_no_error i

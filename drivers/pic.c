@@ -1,3 +1,5 @@
+// drivers/pic.c
+
 #include <pic.h>
 #include <io.h>
 
@@ -16,7 +18,7 @@ void pic_remap(void) {
     outb(PIC2_DATA, 0x02);
     outb(PIC1_DATA, 0x01);
     outb(PIC2_DATA, 0x01);
-    outb(PIC1_DATA, 0xFF);  // маскируем все
+    outb(PIC1_DATA, 0xFF);
     outb(PIC2_DATA, 0xFF);
 }
 

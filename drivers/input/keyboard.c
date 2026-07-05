@@ -1,3 +1,5 @@
+// drivers/input/keyboard.c
+
 #include "keyboard.h"
 #include "video.h"
 #include "io.h"
@@ -10,7 +12,7 @@ static volatile unsigned char buffer[BUFFER_SIZE];
 static volatile int head = 0;
 static volatile int tail = 0;
 static int shift_pressed = 0;
-static int extended = 0;   // флаг для расширенных скан-кодов (0xE0)
+static int extended = 0;
 
 static const char ascii_table[] = {
     0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 0,   0,
@@ -37,15 +39,12 @@ void keyboard_handler(void) {
     if (!(status & 0x01)) return;
     uint8_t scancode = inb(KEYBOARD_DATA_PORT);
 
-    // Обработка расширенного префикса 0xE0
     if (scancode == 0xE0) {
         extended = 1;
         return;
     }
 
-    // Если это код отпускания (бит 7 = 1), игнорируем, но сбрасываем extended
     if (scancode & 0x80) {
-        // Для Shift отпускание обрабатываем отдельно
         if (scancode == (0x2A | 0x80) || scancode == (0x36 | 0x80)) {
             shift_pressed = 0;
         }
@@ -53,14 +52,12 @@ void keyboard_handler(void) {
         return;
     }
 
-    // Обработка Shift (нажатие)
     if (scancode == 0x2A || scancode == 0x36) {
         shift_pressed = 1;
         extended = 0;
         return;
     }
 
-    // Обработка расширенных клавиш (стрелки, и т.д.)
     if (extended) {
         extended = 0;
         int keycode = 0;
@@ -69,20 +66,15 @@ void keyboard_handler(void) {
             case 0x50: keycode = KEY_DOWN; break;
             case 0x4B: keycode = KEY_LEFT; break;
             case 0x4D: keycode = KEY_RIGHT; break;
-            default: return; // не обрабатываем другие расширенные
+            default: return;
         }
-        // Кладём в буфер специальный код
         int next = (head + 1) % BUFFER_SIZE;
         if (next != tail) {
-            buffer[head] = (unsigned char)keycode; // но keycode > 255, не влезет в char
-            // Лучше хранить в отдельном массиве int, но для простоты пока игнорируем
-            // или используем два байта? Проще оставить обработку в get_key через ожидание, но это ломает прерывания.
-            // Пока просто не поддерживаем стрелки, чтобы не усложнять.
+            buffer[head] = (unsigned char)keycode;
         }
         return;
     }
 
-    // Обычные клавиши
     char ascii = shift_pressed ? shift_table[scancode] : ascii_table[scancode];
     if (ascii) {
         int next = (head + 1) % BUFFER_SIZE;
@@ -93,8 +85,7 @@ void keyboard_handler(void) {
         return;
     }
 
-    // Специальные клавиши (Enter, Backspace)
-    if (scancode == 0x1C) { // Enter
+    if (scancode == 0x1C) {
         int next = (head + 1) % BUFFER_SIZE;
         if (next != tail) {
             buffer[head] = '\n';
@@ -102,10 +93,10 @@ void keyboard_handler(void) {
         }
         return;
     }
-    if (scancode == 0x0E) { // Backspace
+    if (scancode == 0x0E) {
         int next = (head + 1) % BUFFER_SIZE;
         if (next != tail) {
-            buffer[head] = '\b'; // или 0x08
+            buffer[head] = '\b';
             head = next;
         }
         return;

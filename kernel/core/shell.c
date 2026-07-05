@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "string.h"
 #include "reboot.h"
+#include <timer.h>
 
 #define HISTORY_SIZE 16
 #define MAX_CMD_LEN 256
@@ -111,13 +112,14 @@ int process_command(char *cmd) {
     while (*cmd == ' ') cmd++;
 
     if (strcmp(cmd, "help") == 0) {
-        print_string("Available commands:\n", COLOR_YELLOW);
-        print_string("  help    - show this help\n", COLOR_WHITE);
+        print_string("System commands:\n", COLOR_YELLOW);
+        print_string("  help        - show this help\n", COLOR_WHITE);
         print_string("  echo <text> - print text\n", COLOR_WHITE);
-        print_string("  ver - show OS version\n", COLOR_WHITE);
-        print_string("  cls   - clear the screen\n", COLOR_WHITE);
-        print_string("  reboot  - reboot the system\n", COLOR_WHITE);
-        print_string("  shutdown  - Turn off the system\n", COLOR_WHITE);
+        print_string("  ver         - show OS version\n", COLOR_WHITE);
+        print_string("  ticks       - show system uptime in ticks (100 Hz)\n", COLOR_WHITE);
+        print_string("  cls         - clear the screen\n", COLOR_WHITE);
+        print_string("  reboot      - reboot the system\n", COLOR_WHITE);
+        print_string("  shutdown    - Turn off the system\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
@@ -142,6 +144,12 @@ int process_command(char *cmd) {
         return 0;
     }
     else if (*cmd == '\0') {
+        return 0;
+    }
+    else if (strcmp(cmd, "ticks") == 0) {
+        print_string("System ticks: ", COLOR_WHITE);
+        print_int(get_ticks(), COLOR_WHITE);
+        print_char('\n', COLOR_WHITE);
         return 0;
     }
     if (strcmp(cmd, "shutdown") == 0) {

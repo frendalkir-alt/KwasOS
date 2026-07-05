@@ -1,8 +1,11 @@
+// kernel/core/isr.c
+
 #include <stdint.h>
 #include <video.h>
 #include <idt.h>
 #include <pic.h>
 #include <keyboard.h>
+#include <timer.h>
 
 typedef struct {
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
@@ -22,8 +25,12 @@ void isr_handler(registers_t* regs) {
     }
     else if (regs->int_no >= 32 && regs->int_no < 48) {
         switch (regs->int_no) {
-            case 32: /* таймер – пока ничего */ break;
-            case 33: keyboard_handler(); break;
+            case 32:
+                timer_handler();
+                break;
+            case 33:
+                keyboard_handler();
+                break;
         }
         pic_eoi(regs->int_no - 32);
     }

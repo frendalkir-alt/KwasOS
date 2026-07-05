@@ -1,8 +1,11 @@
+// kernel/core/kernel.c
+
 #include "video.h"
 #include "shell.h"
 #include "idt.h"
 #include "pic.h"
 #include "keyboard.h"
+#include <timer.h>
 
 void kmain(void) {
     clear_screen();
@@ -11,7 +14,13 @@ void kmain(void) {
     idt_init();
     pic_remap();
     init_keyboard();
+
+    print_string("Initializing timer...", COLOR_CYAN);
+
+    timer_init();
+
     pic_unmask(1);
+    pic_unmask(0);
 
     __asm__ volatile ("sti");
 
