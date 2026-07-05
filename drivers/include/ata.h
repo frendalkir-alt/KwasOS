@@ -8,5 +8,7 @@
 void ata_init(void);
 
 int ata_read_sector(uint32_t lba, uint8_t* buffer);
+int ata_write_sector(uint32_t lba, const uint8_t* buffer);
+int ata_identify(uint16_t* buffer);
 
 #endif

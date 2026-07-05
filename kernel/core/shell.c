@@ -119,18 +119,20 @@ int process_command(char *cmd) {
 
     if (strcmp(cmd, "help") == 0) {
         print_string("System commands:\n", COLOR_YELLOW);
-        print_string("  help        - Show this help\n", COLOR_WHITE);
-        print_string("  echo <text> - Print text\n", COLOR_WHITE);
-        print_string("  ver         - Show OS version\n", COLOR_WHITE);
-        print_string("  ticks       - Show system uptime in ticks (100 Hz)\n", COLOR_WHITE);
-        print_string("  uptime      - Show how many seconds have passed since the OS was started\n", COLOR_WHITE);
-        print_string("  cls         - Clear the screen\n", COLOR_WHITE);
+        print_string("  help     - Show this help\n", COLOR_WHITE);
+        print_string("  echo <text> ( > <file>)     - Print text or print it to file\n", COLOR_WHITE);
+        print_string("  ver     - Show OS version\n", COLOR_WHITE);
+        print_string("  ticks     - Show system uptime in ticks (100 Hz)\n", COLOR_WHITE);
+        print_string("  uptime     - Show how many seconds have passed since the OS was started\n", COLOR_WHITE);
+        print_string("  cls     - Clear the screen\n", COLOR_WHITE);
         print_string("  reboot      - Reboot the system\n", COLOR_WHITE);
-        print_string("  shutdown    - Turn off the system\n", COLOR_WHITE);
-        print_string("  panic       - cause system panic - CAUTION\n", COLOR_WHITE);
+        print_string("  shutdown     - Turn off the system\n", COLOR_WHITE);
+        print_string("  panic     - cause system panic - CAUTION\n", COLOR_WHITE);
         print_string("File system commands:\n", COLOR_YELLOW);
-        print_string("  ls          - Show all directories on / of disk\n", COLOR_WHITE);
-        print_string("  cat         - Show the file contents\n", COLOR_WHITE);
+        print_string("  ls    - Show all directories on / of disk\n", COLOR_WHITE);
+        print_string("  cat     - Show the file contents\n", COLOR_WHITE);
+        print_string("  rm <file>     - delete a file\n", COLOR_WHITE);
+        print_string("  format     - format the disk (FAT32) - CAUTION\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
@@ -151,10 +153,46 @@ int process_command(char *cmd) {
         return 0;
     }
     else if (strncmp(cmd, "echo ", 5) == 0) {
-        const char *msg = cmd + 5;
-        while (*msg == ' ') msg++;
-        print_string(msg, COLOR_WHITE);
-        print_char('\n', COLOR_WHITE);
+        const char* rest = cmd + 5;
+        // Ищем '>'
+        char* redirect_pos = NULL;
+        for (int i = 0; rest[i]; i++) {
+            if (rest[i] == '>') {
+                redirect_pos = (char*)rest + i;
+                break;
+            }
+        }
+        if (redirect_pos) {
+            // Разделяем строку: содержимое до '>' и имя файла после
+            // Пропускаем пробелы перед '>'
+            char* content_end = redirect_pos;
+            while (content_end > rest && *(content_end-1) == ' ') content_end--;
+            // Копируем содержимое
+            char content[256];
+            int len = content_end - rest;
+            if (len > 255) len = 255;
+            for (int i = 0; i < len; i++) content[i] = rest[i];
+            content[len] = '\0';
+
+            // Ищем имя файла после '>'
+            char* filename_start = redirect_pos + 1;
+            while (*filename_start == ' ') filename_start++;
+            // Убираем пробелы в конце имени
+            char* filename_end = filename_start;
+            while (*filename_end && *filename_end != ' ') filename_end++;
+            char filename[256];
+            len = filename_end - filename_start;
+            if (len > 255) len = 255;
+            for (int i = 0; i < len; i++) filename[i] = filename_start[i];
+            filename[len] = '\0';
+
+            // Вызываем запись
+            fat32_write_file(filename, content);
+        } else {
+            // Обычный echo без перенаправления – выводим текст
+            print_string(rest, COLOR_WHITE);
+            print_char('\n', COLOR_WHITE);
+        }
         return 0;
     }
     else if (*cmd == '\0') {
@@ -190,6 +228,39 @@ int process_command(char *cmd) {
     }
     else if (strcmp(cmd, "panic") == 0) {
         kwas_panic(PANIC_USER, "The user caused a panic");
+        return 0;
+    }
+    else if (strncmp(cmd, "rm ", 3) == 0) {
+        const char* filename = cmd + 3;
+        while (*filename == ' ') filename++;
+        fat32_delete_file(filename);
+        return 0;
+    }
+    else if (strcmp(cmd, "format") == 0) {
+        print_string("WARNING: ", COLOR_RED);
+        print_string("This will erase all data on the disk!\n", COLOR_YELLOW);
+        print_string("Are you sure? (y/N): ", COLOR_WHITE);
+        int key = get_key();
+        print_char(key, COLOR_WHITE);
+        print_char('\n', COLOR_WHITE);
+        if (key == 'y' || key == 'Y') {
+            fat32_format();
+        } else {
+            print_string("Format cancelled.\n", COLOR_WHITE);
+        }
+        return 0;
+    }
+    else if (strcmp(cmd, "disk_info") == 0) {
+        uint64_t size = fat32_get_disk_size();
+        if (size) {
+            print_string("Disk size: ", COLOR_WHITE);
+            print_int(size, COLOR_WHITE);
+            print_string(" sectors (", COLOR_WHITE);
+            print_int(size / 2 / 1024, COLOR_WHITE);
+            print_string(" MB)\n", COLOR_WHITE);
+        } else {
+            print_string("Failed to read disk info\n", COLOR_RED);
+        }
         return 0;
     }
     else {

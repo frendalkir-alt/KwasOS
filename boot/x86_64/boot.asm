@@ -1,4 +1,4 @@
-; boot/x64_86/boot.asm - 64'х битный загрузчик
+; boot/x64_86/boot.asm 
 
 BITS 16
 ORG 0x7C00
@@ -11,22 +11,33 @@ start:
     mov ss, ax
     mov sp, 0x7C00
 
+    ; Сохраняем номер диска
+    mov [boot_drive], dl
+
+    ; Включить A20
     in al, 0x92
     or al, 2
     out 0x92, al
 
-    mov ax, 0x1000
+    ; Загружаем ядро (читаем 128 секторов, начиная с сектора 1)
+    mov ax, 0x1000      ; сегмент буфера (0x1000:0x0000)
     mov es, ax
-    xor bx, bx
-    mov ah, 0x02
-    mov al, 32
-    mov ch, 0
-    mov cl, 2
-    mov dh, 0
-    mov dl, 0x00
+    xor bx, bx          ; смещение 0
+
+    mov ah, 0x02        ; функция чтения
+    mov al, 128         ; количество секторов (64 КБ)
+    mov ch, 0           ; цилиндр 0
+    mov cl, 2           ; сектор 2 (1-й сектор после загрузчика)
+    mov dh, 0           ; головка 0
+    mov dl, [boot_drive]; загрузочный диск
     int 0x13
     jc error
 
+    ; Успешно загружено
+    mov si, msg_ok
+    call print16
+
+    ; Переход в защищённый режим
     lgdt [gdt32_desc]
     mov eax, cr0
     or eax, 1
@@ -34,7 +45,7 @@ start:
     jmp 0x08:protected_mode
 
 error:
-    mov si, err_msg
+    mov si, msg_error
     call print16
     cli
     hlt
@@ -50,7 +61,9 @@ print16:
 .done:
     ret
 
-err_msg db "ERR",0
+boot_drive: db 0
+msg_error: db "ERR",0
+msg_ok: db "OK",0
 
 BITS 32
 protected_mode:
@@ -62,6 +75,7 @@ protected_mode:
     mov ss, ax
     mov esp, 0x90000
 
+    ; Настройка PAE, paging, long mode (как в вашем оригинале)
     mov eax, cr4
     or eax, 1 << 5
     mov cr4, eax
@@ -96,7 +110,6 @@ protected_mode:
     mov cr0, eax
 
     lgdt [gdt64_desc]
-
     jmp 0x08:long_mode
 
 BITS 64
@@ -109,22 +122,22 @@ long_mode:
     mov ss, ax
     mov rsp, 0x90000
 
+    ; Копируем ядро из 0x10000 в 0x100000
     mov rsi, 0x10000
     mov rdi, 0x100000
-    mov rcx, 2048
+    mov rcx, 8192   ; 64 КБ / 8 = 8192 qword
     cld
     rep movsq
 
     call 0x100000
-
     cli
     hlt
     jmp $
 
 gdt32_start:
     dq 0x0000000000000000
-    dq 0x00CF9A000000FFFF
-    dq 0x00CF92000000FFFF
+    dq 0x00CF9A000000FFFF   ; код
+    dq 0x00CF92000000FFFF   ; данные
 gdt32_end:
 gdt32_desc:
     dw gdt32_end - gdt32_start - 1
@@ -132,8 +145,8 @@ gdt32_desc:
 
 gdt64_start:
     dq 0x0000000000000000
-    dq 0x00209A0000000000
-    dq 0x0020920000000000
+    dq 0x00209A0000000000   ; код 64
+    dq 0x0020920000000000   ; данные
 gdt64_end:
 gdt64_desc:
     dw gdt64_end - gdt64_start - 1

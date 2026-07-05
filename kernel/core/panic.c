@@ -2,15 +2,6 @@
 #include <video.h>
 #include <stdint.h>
 
-static void print_hex(uint32_t num, unsigned char color) {
-    char hex[] = "0123456789ABCDEF";
-    print_char('0', color);
-    print_char('x', color);
-    for (int i = 28; i >= 0; i -= 4) {
-        print_char(hex[(num >> i) & 0xF], color);
-    }
-}
-
 void kwas_panic(enum panic_code code, const char* message) {
     volatile uint16_t* vga = (volatile uint16_t*)VIDEO_MEMORY;
     for (int i = 0; i < ROWS * COLS; i++) {

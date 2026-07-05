@@ -62,3 +62,62 @@ int ata_read_sector(uint32_t lba, uint8_t* buffer) {
     }
     return 0;
 }
+
+int ata_write_sector(uint32_t lba, const uint8_t* buffer) {
+    if (!ata_wait_ready()) return -1;
+
+    // Выбор диска (LBA mode, master)
+    outb(ATA_REG_DRIVE_HEAD, 0xE0 | ((lba >> 24) & 0x0F));
+    outb(ATA_REG_SECT_COUNT, 1);
+    outb(ATA_REG_LBA_LOW, lba & 0xFF);
+    outb(ATA_REG_LBA_MID, (lba >> 8) & 0xFF);
+    outb(ATA_REG_LBA_HIGH, (lba >> 16) & 0xFF);
+
+    // Отправка команды записи
+    outb(ATA_REG_COMMAND, 0x30); // WRITE SECTORS
+
+    // Ждём готовности
+    for (int i = 0; i < 100000; i++) {
+        uint8_t status = inb(ATA_REG_STATUS);
+        if (status & 0x08) break; // DRQ
+        if (status & 0x01) return -1;
+    }
+
+    // Пишем 256 слов
+    for (int i = 0; i < 256; i++) {
+        uint16_t word = buffer[i*2] | (buffer[i*2+1] << 8);
+        outw(ATA_REG_DATA, word);
+    }
+
+    // Ждём завершения
+    ata_wait_ready();
+    return 0;
+}
+
+int ata_identify(uint16_t* buffer) {
+    if (!ata_wait_ready()) return -1;
+
+    // Выбор диска (master, LBA)
+    outb(ATA_REG_DRIVE_HEAD, 0xE0);
+    // Обнуляем секторные регистры
+    outb(ATA_REG_SECT_COUNT, 0);
+    outb(ATA_REG_LBA_LOW, 0);
+    outb(ATA_REG_LBA_MID, 0);
+    outb(ATA_REG_LBA_HIGH, 0);
+
+    // Команда IDENTIFY
+    outb(ATA_REG_COMMAND, 0xEC);
+
+    // Ждём готовности данных
+    for (int i = 0; i < 100000; i++) {
+        uint8_t status = inb(ATA_REG_STATUS);
+        if (status & 0x01) return -1; // ошибка
+        if (status & 0x08) break;     // DRQ
+    }
+
+    // Читаем 256 слов (512 байт)
+    for (int i = 0; i < 256; i++) {
+        buffer[i] = inw(ATA_REG_DATA);
+    }
+    return 0;
+}
