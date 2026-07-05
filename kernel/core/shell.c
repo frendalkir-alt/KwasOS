@@ -117,18 +117,21 @@ int process_command(char *cmd) {
 
     if (strcmp(cmd, "help") == 0) {
         print_string("System commands:\n", COLOR_YELLOW);
-        print_string("  help        - show this help\n", COLOR_WHITE);
-        print_string("  echo <text> - print text\n", COLOR_WHITE);
-        print_string("  ver         - show OS version\n", COLOR_WHITE);
-        print_string("  ticks       - show system uptime in ticks (100 Hz)\n", COLOR_WHITE);
-        print_string("  cls         - clear the screen\n", COLOR_WHITE);
-        print_string("  reboot      - reboot the system\n", COLOR_WHITE);
+        print_string("  help        - Show this help\n", COLOR_WHITE);
+        print_string("  echo <text> - Print text\n", COLOR_WHITE);
+        print_string("  ver         - Show OS version\n", COLOR_WHITE);
+        print_string("  ticks       - Show system uptime in ticks (100 Hz)\n", COLOR_WHITE);
+        print_string("  uptime      - Show how many seconds have passed since the OS was started\n", COLOR_WHITE);
+        print_string("  cls         - Clear the screen\n", COLOR_WHITE);
+        print_string("  reboot      - Reboot the system\n", COLOR_WHITE);
         print_string("  shutdown    - Turn off the system\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
         clear_screen();
-        print_string("KwasOS 0.1.7\n", COLOR_GREEN);
+        print_string("KwasOS 0.1.7-beta\n", COLOR_GREEN);
+        print_string("(c) kirka ALL RIGHTS RESERVED\n", COLOR_YELLOW);
+        print_string("Type 'help' for commands.\n", COLOR_CYAN);
         return 1;
     }
     else if (strcmp(cmd, "reboot") == 0) {
@@ -137,7 +140,8 @@ int process_command(char *cmd) {
         return 0;
     }
     else if (strcmp(cmd, "ver") == 0) {
-        print_string("KwasOS 0.1.7\n", COLOR_GREEN);
+        print_string("KwasOS v0.1.7-beta\n", COLOR_GREEN);
+        print_string("(c) kirka ALL RIGHTS RESERVED\n", COLOR_YELLOW);
         return 0;
     }
     else if (strncmp(cmd, "echo ", 5) == 0) {
@@ -156,7 +160,14 @@ int process_command(char *cmd) {
         print_char('\n', COLOR_WHITE);
         return 0;
     }
-    if (strcmp(cmd, "shutdown") == 0) {
+    else if (strcmp(cmd, "uptime") == 0) {
+        uint64_t sec = system_ticks / 100;
+        print_string("Uptime: ", COLOR_WHITE);
+        print_int(sec, COLOR_WHITE);
+        print_string(" seconds\n", COLOR_WHITE);
+        return 0;
+    }
+    else if (strcmp(cmd, "shutdown") == 0) {
         print_string("Shutting down...\n", COLOR_WHITE);
         shutdown();
         return 1;
