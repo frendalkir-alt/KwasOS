@@ -67,6 +67,7 @@ KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 KERNEL_BIN = $(BUILD_DIR)/kernel.bin
 BOOT_BIN = $(BUILD_DIR)/KwasBOOT.bin
 FLOPPY_IMG = $(BUILD_DIR)/floppy.img
+DISK_IMG = disk.img
 ISO_IMG = KwasOS.iso
 
 all: $(ISO_IMG)
@@ -102,6 +103,14 @@ $(FLOPPY_IMG): $(BOOT_BIN) $(KERNEL_BIN)
 	dd if=$(BOOT_BIN) of=$@ bs=512 count=1 conv=notrunc 2>/dev/null
 	dd if=$(KERNEL_BIN) of=$@ bs=512 seek=1 conv=notrunc 2>/dev/null
 
+$(DISK_IMG):
+	dd if=/dev/zero of=$(DISK_IMG) bs=1M count=32
+	newfs_msdos -F 32 $(DISK_IMG)
+	@echo "Disk image created. You can mount it using:"
+	@echo "  hdiutil attach -mountpoint /tmp/mnt $(DISK_IMG)"
+	@echo "  cp files /tmp/mnt/"
+	@echo "  hdiutil detach /tmp/mnt"
+
 # Создание ISO-образа
 $(ISO_IMG): $(FLOPPY_IMG)
 	mkdir -p $(ISO_ROOT)
@@ -109,13 +118,11 @@ $(ISO_IMG): $(FLOPPY_IMG)
 	$(XORRISO) -as mkisofs -b floppy.img -c boot.catalog -o $@ $(ISO_ROOT)
 	rm -rf $(ISO_ROOT)
 
-run: $(ISO_IMG)
-	$(QEMU) -cdrom $(ISO_IMG) -m 256 -cpu qemu64
+run-with-out-disk: $(ISO_IMG)
+	$(QEMU) -cdrom $(ISO_IMG) -boot d -m 256 -cpu qemu64
 
-floppy: $(FLOPPY_IMG)
-
-run-floppy: $(FLOPPY_IMG)
-	$(QEMU) -fda $(FLOPPY_IMG) -m 256 -cpu qemu64
+run: $(ISO_IMG) $(DISK_IMG)
+	$(QEMU) -cdrom $(ISO_IMG) -hda $(DISK_IMG) -boot order=d -m 256 -cpu qemu64
 
 check-deps:
 	@echo "Checking dependencies..."

@@ -6,7 +6,6 @@ floppy.img
 *.o
 *.elf
 *.bin
-*.img
 *.iso
 *.catalog
 

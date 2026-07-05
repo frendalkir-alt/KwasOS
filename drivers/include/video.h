@@ -14,6 +14,8 @@
 #define COLOR_RED    0x04
 #define COLOR_CYAN   0x03
 #define COLOR_GRAY   0x08
+#define COLOR_WHITE_ON_RED 0x4F
+#define COLOR_RED_ON_WHITE 0x74
 
 void set_cursor(int row, int col);
 void gotoxy(int row, int col);

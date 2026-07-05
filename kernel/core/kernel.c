@@ -6,6 +6,8 @@
 #include "pic.h"
 #include "keyboard.h"
 #include <timer.h>
+#include <fat32.h>
+#include <ata.h>
 
 void kmain(void) {
     clear_screen();
@@ -21,6 +23,9 @@ void kmain(void) {
 
     pic_unmask(1);
     pic_unmask(0);
+
+    ata_init();
+    fat32_init();
 
     __asm__ volatile ("sti");
 

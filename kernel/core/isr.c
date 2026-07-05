@@ -6,6 +6,7 @@
 #include <pic.h>
 #include <keyboard.h>
 #include <timer.h>
+#include <panic.h>
 
 typedef struct {
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
@@ -21,7 +22,7 @@ void isr_handler(registers_t* regs) {
         print_string(" occurred. Error code: ", COLOR_RED);
         print_int(regs->err_code, COLOR_RED);
         print_string("\n", COLOR_RED);
-        for(;;);
+        kwas_panic(PANIC_EXCEPTION, "Processor exclusion");
     }
     else if (regs->int_no >= 32 && regs->int_no < 48) {
         switch (regs->int_no) {

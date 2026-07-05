@@ -6,6 +6,8 @@
 #include "string.h"
 #include "reboot.h"
 #include <timer.h>
+#include <fat32.h>
+#include <panic.h>
 
 #define HISTORY_SIZE 16
 #define MAX_CMD_LEN 256
@@ -125,6 +127,10 @@ int process_command(char *cmd) {
         print_string("  cls         - Clear the screen\n", COLOR_WHITE);
         print_string("  reboot      - Reboot the system\n", COLOR_WHITE);
         print_string("  shutdown    - Turn off the system\n", COLOR_WHITE);
+        print_string("  panic       - cause system panic - CAUTION\n", COLOR_WHITE);
+        print_string("File system commands:\n", COLOR_YELLOW);
+        print_string("  ls          - Show all directories on / of disk\n", COLOR_WHITE);
+        print_string("  cat         - Show the file contents\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
@@ -172,10 +178,25 @@ int process_command(char *cmd) {
         shutdown();
         return 1;
     }
+    else if (strcmp(cmd, "ls") == 0) {
+        fat32_ls();
+        return 0;
+    }
+    else if (strncmp(cmd, "cat ", 4) == 0) {
+        const char* filename = cmd + 4;
+        while (*filename == ' ') filename++;
+        fat32_cat(filename);
+        return 0;
+    }
+    else if (strcmp(cmd, "panic") == 0) {
+        kwas_panic(PANIC_USER, "The user caused a panic");
+        return 0;
+    }
     else {
         print_string("Unknown command: ", COLOR_RED);
         print_string(cmd, COLOR_RED);
         print_char('\n', COLOR_RED);
         return 0;
     }
+    return 0;
 }
