@@ -1,7 +1,8 @@
+// kernel/include/panic.h
+
 #ifndef PANIC_H
 #define PANIC_H
 
-// Коды ошибок
 enum panic_code {
     PANIC_GENERAL = 0x01,
     PANIC_EXCEPTION = 0x02,
@@ -15,10 +16,8 @@ enum panic_code {
     PANIC_STACK_OVERFLOW = 0x0A,
     PANIC_INVALID_OPCODE = 0x0B,
     PANIC_DOUBLE_FAULT = 0x0C,
-    // можно добавлять другие
 };
 
-// Вызов паники с кодом и сообщением
 void kwas_panic(enum panic_code code, const char* message);
 
 #endif

@@ -1,4 +1,4 @@
-; kernel/core/interrupt.asm – обработчики прерываний (x86-64, NASM)
+; kernel/core/interrupt.asm
 
 extern isr_handler
 

@@ -6,7 +6,6 @@ static void print_hex(uint32_t num, unsigned char color) {
     char hex[] = "0123456789ABCDEF";
     print_char('0', color);
     print_char('x', color);
-    // Выводим 8 цифр (для 32-бит)
     for (int i = 28; i >= 0; i -= 4) {
         print_char(hex[(num >> i) & 0xF], color);
     }
@@ -30,13 +29,12 @@ void kwas_panic(enum panic_code code, const char* message) {
     row += 2;
     const char* code_label = " Error code: ";
     int code_label_len = 12;
-    int col = (COLS - (code_label_len + 10)) / 2; // 10 символов для 0xXXXXXXXX
+    int col = (COLS - (code_label_len + 10)) / 2;
     pos = row * COLS + col;
     for (int i = 0; i < code_label_len; i++) {
         vga[pos + i] = code_label[i] | (COLOR_WHITE_ON_RED << 8);
     }
-    // Выводим код в hex
-    char hex_buf[11]; // "0xXXXXXXXX\0"
+    char hex_buf[11];
     hex_buf[0] = '0';
     hex_buf[1] = 'x';
     for (int i = 0; i < 8; i++) {

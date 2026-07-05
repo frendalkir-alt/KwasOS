@@ -162,7 +162,6 @@ void fat32_cat(const char* filename) {
             short_name[i] = short_name[i] - 'a' + 'A';
     }
 
-    // Читаем корневой каталог
     uint8_t cluster_buffer[512 * 64];
     if (read_cluster(root_cluster, cluster_buffer) != 0) {
         print_string("FAT32: Failed to read root directory\n", COLOR_RED);
@@ -196,10 +195,9 @@ void fat32_cat(const char* filename) {
     uint32_t bytes_remaining = found_entry->file_size;
 
     while (bytes_remaining > 0 && cluster < 0x0FFFFFF8) {
-        uint8_t data_buffer[512 * 8]; // 4 КБ (если кластер больше, читаем по частям)
+        uint8_t data_buffer[512 * 8];
         uint32_t bytes_to_read = (bytes_remaining < sectors_per_cluster * bytes_per_sector) ?
                                  bytes_remaining : sectors_per_cluster * bytes_per_sector;
-        // Читаем кластер по секторам
         uint32_t lba = data_start_lba + (cluster - 2) * sectors_per_cluster;
         uint32_t remaining = bytes_to_read;
         uint32_t offset = 0;
@@ -213,7 +211,6 @@ void fat32_cat(const char* filename) {
             offset += chunk;
             lba++;
         }
-        // Выводим содержимое
         for (uint32_t i = 0; i < bytes_to_read; i++) {
             char c = data_buffer[i];
             if (c >= 0x20 && c <= 0x7E) print_char(c, COLOR_WHITE);
