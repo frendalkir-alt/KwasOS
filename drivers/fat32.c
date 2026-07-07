@@ -636,3 +636,182 @@ void fat32_delete_file(const char* filename) {
     print_string(filename, COLOR_GREEN);
     print_string("\n", COLOR_GREEN);
 }
+
+// ============================================================
+//  Создание директории (mkdir)
+// ============================================================
+void fat32_mkdir(const char* dirname) {
+    // Преобразуем имя в 8.3
+    char short_name[11];
+    for (int i = 0; i < 11; i++) short_name[i] = ' ';
+    int i, j;
+    for (i = 0; dirname[i] && dirname[i] != '.' && i < 8; i++) {
+        short_name[i] = dirname[i];
+    }
+    if (dirname[i] == '.') {
+        i++;
+        for (j = 0; dirname[i] && j < 3; i++, j++) {
+            short_name[8 + j] = dirname[i];
+        }
+    }
+    for (i = 0; i < 11; i++) {
+        if (short_name[i] >= 'a' && short_name[i] <= 'z')
+            short_name[i] = short_name[i] - 'a' + 'A';
+    }
+
+    // Читаем корневой каталог
+    if (read_cluster(root_cluster, cluster_buffer) != 0) {
+        print_string("FAT32: Failed to read root directory\n", COLOR_RED);
+        return;
+    }
+
+    uint32_t entries_per_cluster = (sectors_per_cluster * bytes_per_sector) / sizeof(fat32_dir_entry_t);
+    fat32_dir_entry_t* entries = (fat32_dir_entry_t*)cluster_buffer;
+    fat32_dir_entry_t* target_entry = NULL;
+    int entry_index = -1;
+
+    // Проверяем, существует ли уже такая директория
+    for (uint32_t i = 0; i < entries_per_cluster; i++) {
+        fat32_dir_entry_t* entry = &entries[i];
+        if (entry->name[0] == 0x00) {
+            if (!target_entry) { target_entry = entry; entry_index = i; }
+            break;
+        }
+        if (entry->name[0] == 0xE5) {
+            if (!target_entry) { target_entry = entry; entry_index = i; }
+            continue;
+        }
+        if (entry->attr & 0x0F) continue;
+        int match = 1;
+        for (int k = 0; k < 11; k++) {
+            if (entry->name[k] != short_name[k]) { match = 0; break; }
+        }
+        if (match) {
+            print_string("Directory already exists: ", COLOR_RED);
+            print_string(dirname, COLOR_RED);
+            print_string("\n", COLOR_RED);
+            return;
+        }
+    }
+
+    if (!target_entry) {
+        print_string("FAT32: No free directory entry (use command format to create directories)\n", COLOR_RED);
+        return;
+    }
+
+    // Находим свободный кластер для новой директории
+    uint32_t start_cluster = fat32_find_free_cluster();
+    if (start_cluster == 0) {
+        print_string("FAT32: No free clusters\n", COLOR_RED);
+        return;
+    }
+
+    // Инициализируем FAT для нового кластера
+    uint32_t fat_lba = reserved_sectors + (start_cluster * 4) / bytes_per_sector;
+    uint32_t offset = (start_cluster * 4) % bytes_per_sector;
+    uint8_t sector[512];
+    if (ata_read_sector(fat_lba, sector) != 0) {
+        print_string("FAT32: Failed to read FAT\n", COLOR_RED);
+        return;
+    }
+    *(uint32_t*)(sector + offset) = 0x0FFFFFF8;  // Конец цепочки
+    if (ata_write_sector(fat_lba, sector) != 0) {
+        print_string("FAT32: Failed to write FAT\n", COLOR_RED);
+        return;
+    }
+
+    // Очищаем новый кластер (создаём пустую директорию)
+    uint8_t empty_cluster[512];
+    for (int i = 0; i < 512; i++) empty_cluster[i] = 0;
+    uint32_t dir_lba = data_start_lba + (start_cluster - 2) * sectors_per_cluster;
+    for (uint32_t sec = 0; sec < sectors_per_cluster; sec++) {
+        if (ata_write_sector(dir_lba + sec, empty_cluster) != 0) {
+            print_string("FAT32: Failed to clear new directory\n", COLOR_RED);
+            return;
+        }
+    }
+
+    // Создаём запись "." (текущая директория)
+    fat32_dir_entry_t dot_entry;
+    for (int i = 0; i < 11; i++) dot_entry.name[i] = ' ';
+    dot_entry.name[0] = '.';
+    dot_entry.attr = 0x10;  // Атрибут директории
+    dot_entry.nt_reserved = 0;
+    dot_entry.create_time_tenth = 0;
+    dot_entry.create_time = 0;
+    dot_entry.create_date = 0;
+    dot_entry.access_date = 0;
+    dot_entry.first_cluster_high = (start_cluster >> 16) & 0xFFFF;
+    dot_entry.modify_time = 0;
+    dot_entry.modify_date = 0;
+    dot_entry.first_cluster_low = start_cluster & 0xFFFF;
+    dot_entry.file_size = 0;
+
+    // Записываем "." в начало кластера
+    if (ata_read_sector(dir_lba, sector) != 0) {
+        print_string("FAT32: Failed to read new directory\n", COLOR_RED);
+        return;
+    }
+    fat32_dir_entry_t* dir_entries = (fat32_dir_entry_t*)sector;
+    dir_entries[0] = dot_entry;
+    if (ata_write_sector(dir_lba, sector) != 0) {
+        print_string("FAT32: Failed to write '.' entry\n", COLOR_RED);
+        return;
+    }
+
+    // Создаём запись в родительской директории
+    for (int k = 0; k < 11; k++) target_entry->name[k] = short_name[k];
+    target_entry->attr = 0x10;  // Атрибут директории
+    target_entry->nt_reserved = 0;
+    target_entry->create_time_tenth = 0;
+    target_entry->create_time = 0;
+    target_entry->create_date = 0;
+    target_entry->access_date = 0;
+    target_entry->first_cluster_high = (start_cluster >> 16) & 0xFFFF;
+    target_entry->modify_time = 0;
+    target_entry->modify_date = 0;
+    target_entry->first_cluster_low = start_cluster & 0xFFFF;
+    target_entry->file_size = 0;
+
+    // Записываем изменённый каталог
+    if (write_cluster(root_cluster, cluster_buffer) != 0) {
+        print_string("FAT32: Failed to write directory\n", COLOR_RED);
+        return;
+    }
+
+    print_string("Directory created: ", COLOR_GREEN);
+    print_string(dirname, COLOR_GREEN);
+    print_string("\n", COLOR_GREEN);
+}
+
+// ============================================================
+//  Смена директории (cd) - упрощённая версия для корня
+// ============================================================
+static char current_path[256] = "/";
+
+int fat32_cd(const char* dirname) {
+    if (strcmp(dirname, "/") == 0 || strcmp(dirname, "..") == 0) {
+        current_path[0] = '/';
+        current_path[1] = '\0';
+        print_string("Changed directory to /\n", COLOR_WHITE);
+        return 0;
+    }
+    
+    if (strcmp(dirname, ".") == 0) {
+        print_string("Current directory: ", COLOR_WHITE);
+        print_string(current_path, COLOR_WHITE);
+        print_string("\n", COLOR_WHITE);
+        return 0;
+    }
+
+    // Пока поддерживается только переход в корень и обратно
+    // Для полноценной навигации нужно реализовать парсинг путей
+    print_string("cd: Only '/' and '..' are supported in this version\n", COLOR_YELLOW);
+    return -1;
+}
+
+void fat32_pwd(void) {
+    print_string("Current directory: ", COLOR_WHITE);
+    print_string(current_path, COLOR_WHITE);
+    print_string("\n", COLOR_WHITE);
+}

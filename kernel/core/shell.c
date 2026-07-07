@@ -132,6 +132,9 @@ int process_command(char *cmd) {
         print_string("  ls    - Show all directories on / of disk\n", COLOR_WHITE);
         print_string("  cat     - Show the file contents\n", COLOR_WHITE);
         print_string("  rm <file>     - delete a file\n", COLOR_WHITE);
+        print_string("  mkdir <dir>   - create a directory\n", COLOR_WHITE);
+        print_string("  cd <dir>      - change directory\n", COLOR_WHITE);
+        print_string("  pwd           - print working directory\n", COLOR_WHITE);
         print_string("  format     - format the disk (FAT32) - CAUTION\n", COLOR_WHITE);
         return 0;
     }
@@ -261,6 +264,22 @@ int process_command(char *cmd) {
         } else {
             print_string("Failed to read disk info\n", COLOR_RED);
         }
+        return 0;
+    }
+    else if (strncmp(cmd, "mkdir ", 6) == 0) {
+        const char* dirname = cmd + 6;
+        while (*dirname == ' ') dirname++;
+        fat32_mkdir(dirname);
+        return 0;
+    }
+    else if (strncmp(cmd, "cd ", 3) == 0) {
+        const char* dirname = cmd + 3;
+        while (*dirname == ' ') dirname++;
+        fat32_cd(dirname);
+        return 0;
+    }
+    else if (strcmp(cmd, "pwd") == 0) {
+        fat32_pwd();
         return 0;
     }
     else {
