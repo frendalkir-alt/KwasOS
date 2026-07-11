@@ -134,13 +134,13 @@ int process_command(char *cmd) {
         print_string("  rm <file>     - delete a file\n", COLOR_WHITE);
         print_string("  mkdir <dir>   - create a directory\n", COLOR_WHITE);
         print_string("  cd <dir>      - change directory\n", COLOR_WHITE);
-        print_string("  pwd           - print working directory\n", COLOR_WHITE);
+        print_string("  pwd     - print working directory\n", COLOR_WHITE);
         print_string("  format     - format the disk (FAT32) - CAUTION\n", COLOR_WHITE);
         return 0;
     }
     else if (strcmp(cmd, "cls") == 0) {
         clear_screen();
-        print_string("KwasOS 0.1.7-beta\n", COLOR_GREEN);
+        print_string("KwasOS 0.1.7\n", COLOR_GREEN);
         print_string("(c) kirka ALL RIGHTS RESERVED\n", COLOR_YELLOW);
         print_string("Type 'help' for commands.\n", COLOR_CYAN);
         return 1;
@@ -151,7 +151,7 @@ int process_command(char *cmd) {
         return 0;
     }
     else if (strcmp(cmd, "ver") == 0) {
-        print_string("KwasOS v0.1.7-beta\n", COLOR_GREEN);
+        print_string("KwasOS v0.1.7\n", COLOR_GREEN);
         print_string("(c) kirka ALL RIGHTS RESERVED\n", COLOR_YELLOW);
         return 0;
     }
