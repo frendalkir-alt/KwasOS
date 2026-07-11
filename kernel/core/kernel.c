@@ -30,7 +30,7 @@ void kmain(void) {
     __asm__ volatile ("sti");
 
     clear_screen();
-    print_string("KwasOS 0.1.7-beta\n", COLOR_GREEN);
+    print_string("KwasOS 0.1.7\n", COLOR_GREEN);
     print_string("(c) kirka ALL RIGHTS RESERVED\n", COLOR_YELLOW);
     print_string("Type 'help' for commands.\n", COLOR_CYAN);
 
